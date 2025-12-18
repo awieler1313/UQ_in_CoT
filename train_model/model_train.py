@@ -173,7 +173,7 @@ def split_response_into_steps(text):
 
 ## Load data
 data_train = []
-with open("/home/wielera1/projects/def-lding1/wielera1/data/gsm8k_inference_results_train1.jsonl", "r", encoding="utf-8", errors="ignore") as f:
+with open("data/gsm8k_inference_results_train1.jsonl", "r", encoding="utf-8", errors="ignore") as f:
     for line in f:
         line = line.strip()
         if line:  # skip empty lines
@@ -183,7 +183,7 @@ with open("/home/wielera1/projects/def-lding1/wielera1/data/gsm8k_inference_resu
                 print("Skipping invalid JSON line:", line)
 
 
-with open("/home/wielera1/projects/def-lding1/wielera1/data/gsm8k_inference_results_train2.jsonl", "r", encoding="utf-8", errors="ignore") as f:
+with open("data/gsm8k_inference_results_train2.jsonl", "r", encoding="utf-8", errors="ignore") as f:
     for line in f:
         line = line.strip()
         if line:  # skip empty lines
@@ -206,7 +206,7 @@ This coded out chunk is to build the graphs and save the graphs
 
 ## Load embedder
 # from sentence_transformers import SentenceTransformer
-# embedder = SentenceTransformer('/home/wielera1/projects/def-lding1/wielera1/models/all-MiniLM-L6-v2')
+# embedder = SentenceTransformer('models/all-MiniLM-L6-v2')
 
 ## Prep data
 # data_train = add_steps(data_train)
@@ -357,5 +357,5 @@ for epoch in range(num_epochs):
 
         if avg_loss <= best_eval_loss:
             best_eval_loss = avg_loss
-            torch.save(model.state_dict(), "/home/wielera1/projects/def-lding1/wielera1/models/GNN_model4.pt")
+            torch.save(model.state_dict(), "models/GNN_model4.pt")
 
