@@ -9,8 +9,8 @@ This code is to run the trained model on the test and calibration
 to get the output resylts for further analysis
 """
 
-test_set = torch.load("test_set2.pt",weights_only=False)
-calibration_set = torch.load("calibration_set2.pt",weights_only=False)
+test_set = torch.load("data/test_set2.pt",weights_only=False)
+calibration_set = torch.load("data/calibration_set2.pt",weights_only=False)
 
 
 class AnswerNodeEmbedding(nn.Module):
@@ -82,7 +82,7 @@ num_answers = 10
 model = MyHeteroGNNShared(hidden_dim, answer_embed_dim, num_answers, num_layers)
 model = model.to(device)
 print("loading model")
-model.load_state_dict(torch.load("/home/wielera1/projects/def-lding1/wielera1/models/GNN_model4.pt", map_location='cpu'))
+model.load_state_dict(torch.load("models/GNN_model4.pt", map_location='cpu'))
 
 criterion = nn.BCELoss()
 model.eval()
