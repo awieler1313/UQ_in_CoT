@@ -10,10 +10,10 @@ in parallel.
 """
 
 ## paths
-model_name = "/home/wielera1/projects/def-lding1/wielera1/models/Mistral-7B-Instruct-v0.2"
+model_name = "models/Mistral-7B-Instruct-v0.2"
 print(model_name)
-data_path = "/home/wielera1/projects/def-lding1/wielera1/data/gsm8k_local_copy"
-save_path = "/home/wielera1/projects/def-lding1/wielera1/data/gsm8k_inference_results_train1.jsonl"
+data_path = "data/gsm8k_local_copy"
+save_path = "data/gsm8k_inference_results_train1.jsonl"
 
 # hyper parameters
 num_gen = 10
