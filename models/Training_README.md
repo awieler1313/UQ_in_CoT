@@ -1,0 +1,1 @@
+To train model, first you have to load the GSM8K data set, the Mistral-7B-Instruct-v0.2 model and the all-MiniLM-L6-v2 model from hugging face to run inference on the data set to collect the data and then train the model
