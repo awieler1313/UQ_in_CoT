@@ -232,32 +232,27 @@ training_set = training_set[:split]
 
 
 ## Define GNN model
-class AnswerNodeEmbedding(nn.Module):
-    def __init__(self, num_answers, embed_dim):
-        super().__init__()
-        self.emb = nn.Embedding(num_answers, embed_dim)
-
-    def forward(self, batch_size=None):
-        return self.emb.weight
-
-
 class MyHeteroGNNShared(nn.Module):
+    # GNN model for learning uncertainty
     def __init__(self, hidden_dim, answer_embed_dim, num_answers, num_layers=6):
         super().__init__()
         self.num_layers = num_layers
 
+        # learnable embedding for answer nodes
         self.answer_emb = nn.Embedding(num_answers, answer_embed_dim)
 
+        # Input projections
         self.step_proj = nn.Linear(384, hidden_dim)
         self.answer_proj = nn.Linear(answer_embed_dim, hidden_dim)
 
+        # First set of hetero convolutional blocks
         self.conv1 = HeteroConv({
             ('step', 'implies', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'semantic', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('answer', 'equivalent', 'answer'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'contributes', 'answer'): SAGEConv((-1, -1), hidden_dim),
         }, aggr='sum')
-
+        # second set of hetero convolutional blocks
         self.conv2 = HeteroConv({
             ('step', 'implies', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'semantic', 'step'): SAGEConv((-1, -1), hidden_dim),
@@ -265,15 +260,18 @@ class MyHeteroGNNShared(nn.Module):
             ('step', 'contributes', 'answer'): SAGEConv((-1, -1), hidden_dim),
         }, aggr='sum')
 
+        # Feed forward for final answer prediction
         self.answer_predictor = nn.Linear(hidden_dim, 1)
         self.act = nn.ReLU()
 
     def forward(self, data: HeteroData):
+        # Initial projection to hidden_dim
         x_dict = {
-            'step': self.step_proj(data['step'].x),        
-            'answer': self.answer_proj(self.answer_emb.weight) 
+            'step': self.step_proj(data['step'].x),           
+            'answer': self.answer_proj(self.answer_emb.weight)
         }
 
+        # Reuse conv1 and conv2 alternately
         for i in range(self.num_layers):
             if i % 2 == 0:
                 x_dict = self.conv1(x_dict, data.edge_index_dict)
@@ -281,6 +279,7 @@ class MyHeteroGNNShared(nn.Module):
                 x_dict = self.conv2(x_dict, data.edge_index_dict)
             x_dict = {k: self.act(x) for k, x in x_dict.items()}
 
+        # feed forward for scalar predcition
         answer_scores = F.sigmoid(self.answer_predictor(x_dict['answer']))
         return answer_scores.squeeze(-1)
 
@@ -320,7 +319,7 @@ for epoch in range(num_epochs):
     for example in training_set:
         data_graph, gold_answers = example  # unpack
         data_graph = data_graph.to(device)
-        gold_answers = gold_answers.to(device).float()  # ensure float for regression
+        gold_answers = gold_answers.to(device).float()
 
         optimizer.zero_grad()
         pred_answers = model(data_graph)  # shape [num_answers]
@@ -330,7 +329,7 @@ for epoch in range(num_epochs):
 
         total_loss += loss.item()
 
-
+    # Print total loss to see model training performance
     avg_loss = total_loss / len(training_set)
     print(f"Epoch {epoch+1}/{num_epochs}, Avg Loss: {avg_loss:.4f}")
 
@@ -355,6 +354,7 @@ for epoch in range(num_epochs):
         avg_loss = total_loss / len(eval_set)
         print(f"Eval Epoch {epoch+1}/{num_epochs}, Avg Loss: {avg_loss:.4f}")
 
+        # save model only when the eval set loss is minimized
         if avg_loss <= best_eval_loss:
             best_eval_loss = avg_loss
             torch.save(model.state_dict(), "models/GNN_model4.pt")
