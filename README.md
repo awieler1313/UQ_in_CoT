@@ -1,1 +1,1 @@
-Project fo Statistical Natural Language Processing Course. Conformal inference for chain of thought reasoning tasks.
+Project fo Statistical Natural Language Processing Course. Selectvie Conformal prediction in chain of thought reasoning
