@@ -58,17 +58,20 @@ def find_cp_threshold(scores, labels, alpha=0.1, calibration_split=0.5, epsilon 
 
     n1 = int(len(scores) * calibration_split)
 
+    # split data based on calibration split value
     scores_A = scores[:n1]  
     labels_A = labels[:n1]
 
     scores_B = scores[n1:]  
     labels_B = labels[n1:]
 
+    # sort candidate thresholds
     candidates = np.unique(scores_A)
     candidates.sort()
 
     best_t = None
 
+    # Go through each tahreshold and check if it satisfies the condidiotns of the algorithm
     for t in candidates:
         mask = scores_B > t
         n = mask.sum()
@@ -77,6 +80,7 @@ def find_cp_threshold(scores, labels, alpha=0.1, calibration_split=0.5, epsilon 
 
         k = labels_B[mask].sum()
 
+        # compute CP lower bound
         lower = clopper_pearson_lower_bound(k, n, epsilon)
 
         if lower >= 1 - alpha:
@@ -148,7 +152,7 @@ def evaluate_baseline(dataset, threshold=0.5, eps=1e-12, method="soft_vote"):
 
             # Check for tie
             if sum(1 for c in counts.values() if c == most_common_count) > 1:
-                confidences = [0.0] * n
+                confidences = [0.0]*n
             else:
                 most_common_answer = counts.most_common(1)[0][0]
                 confidences = [1.0 if r["pred_answer"] == most_common_answer else 0.0 for r in responses]
@@ -169,8 +173,8 @@ def evaluate_baseline(dataset, threshold=0.5, eps=1e-12, method="soft_vote"):
     bce = 0.0
     for yt, yp in zip(y_true, y_pred):
         yp = min(max(yp, eps), 1 - eps)
-        bce += -(yt * math.log(yp) + (1 - yt) * math.log(1 - yp))
-    bce /= len(y_true)
+        bce += -(yt * math.log(yp) + (1 - yt)*math.log(1 - yp))
+    bce/=len(y_true)
 
     tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 1 and yp >= threshold)
     fp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 0 and yp >= threshold)
@@ -200,3 +204,4 @@ def evaluate_baseline(dataset, threshold=0.5, eps=1e-12, method="soft_vote"):
         "FN": fn,
         "Total": len(y_true),
     }
+
