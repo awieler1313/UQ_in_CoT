@@ -12,34 +12,27 @@ to get the output resylts for further analysis
 test_set = torch.load("data/test_set2.pt",weights_only=False)
 calibration_set = torch.load("data/calibration_set2.pt",weights_only=False)
 
-
-class AnswerNodeEmbedding(nn.Module):
-    def __init__(self, num_answers, embed_dim):
-        super().__init__()
-        self.emb = nn.Embedding(num_answers, embed_dim)
-
-    def forward(self, batch_size=None):
-        return self.emb.weight 
-
-
 class MyHeteroGNNShared(nn.Module):
+    # GNN model for learning uncertainty
     def __init__(self, hidden_dim, answer_embed_dim, num_answers, num_layers=6):
         super().__init__()
         self.num_layers = num_layers
 
+        # learnable embedding for answer nodes
         self.answer_emb = nn.Embedding(num_answers, answer_embed_dim)
 
         # Input projections
         self.step_proj = nn.Linear(384, hidden_dim)
         self.answer_proj = nn.Linear(answer_embed_dim, hidden_dim)
 
+        # First set of hetero convolutional blocks
         self.conv1 = HeteroConv({
             ('step', 'implies', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'semantic', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('answer', 'equivalent', 'answer'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'contributes', 'answer'): SAGEConv((-1, -1), hidden_dim),
         }, aggr='sum')
-
+        # second set of hetero convolutional blocks
         self.conv2 = HeteroConv({
             ('step', 'implies', 'step'): SAGEConv((-1, -1), hidden_dim),
             ('step', 'semantic', 'step'): SAGEConv((-1, -1), hidden_dim),
@@ -47,6 +40,7 @@ class MyHeteroGNNShared(nn.Module):
             ('step', 'contributes', 'answer'): SAGEConv((-1, -1), hidden_dim),
         }, aggr='sum')
 
+        # Feed forward for final answer prediction
         self.answer_predictor = nn.Linear(hidden_dim, 1)
         self.act = nn.ReLU()
 
@@ -66,7 +60,7 @@ class MyHeteroGNNShared(nn.Module):
             x_dict = {k: self.act(x) for k, x in x_dict.items()}
 
         # feed forward for scalar predcition
-        answer_scores = F.sigmoid(self.answer_predictor(x_dict['answer']))  # [num_answers, 1]
+        answer_scores = F.sigmoid(self.answer_predictor(x_dict['answer']))
         return answer_scores.squeeze(-1)
 
 
@@ -93,6 +87,7 @@ total_loss = 0.0
 
 print("running test set")
 with torch.no_grad():
+    # go through test set and save true values with model output
     for data_graph, gold_answers in test_set:
         data_graph = data_graph.to(device)
         gold_answers = gold_answers.to(device).float()
@@ -128,6 +123,7 @@ total_loss = 0.0
 
 with torch.no_grad():
     for data_graph, gold_answers in calibration_set:
+        # go through calibration set and save model output with true label
         data_graph = data_graph.to(device)
         gold_answers = gold_answers.to(device).float()
 
