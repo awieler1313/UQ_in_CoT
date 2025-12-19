@@ -11,7 +11,6 @@ in parallel.
 
 ## paths
 model_name = "models/Mistral-7B-Instruct-v0.2"
-print(model_name)
 data_path = "data/gsm8k_local_copy"
 save_path = "data/gsm8k_inference_results_train1.jsonl"
 
@@ -41,9 +40,11 @@ model.eval()
 ## utils
 
 def make_prompt(question):
+    # adds chain of thought prompt to start of prompt
     return f"<s>[INST] Solve this problem step by step, and give the final numeric answer after '####', stop after generating the final numeric answer.\n\nQuestion: {question} [/INST]"
 
 def generate_k_responses(model, tokenizer, question, k=10, max_new_tokens=500):
+    # generate k responses to a prompt
     prompt = make_prompt(question)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     decoded = []
@@ -60,6 +61,7 @@ def generate_k_responses(model, tokenizer, question, k=10, max_new_tokens=500):
     return decoded
 
 def extract_answer(text: str):
+    # Extracts the final answer from the responses to see if it is correct
     text = text.strip().lower()
 
     # Match times, comma numbers, decimals, and integers
@@ -78,21 +80,20 @@ def extract_answer(text: str):
             # If it's a decimal, normalize
             if re.match(r"^\d+\.\d+$", raw_no_commas):
                 val = float(raw_no_commas)
-                # If it's actually an integer like 18.00 -> "18"
                 if val.is_integer():
                     return str(int(val))
-                return raw_no_commas  # real decimal, keep as-is
+                return raw_no_commas
 
-            return raw_no_commas  # simple integer or time
+            return raw_no_commas
 
     return None
 
 
 
-
+# Run inference
 print("running inference...")
 results = []
-samples = full_test_data  # for testing; remove for full run
+samples = full_test_data
 
 save_interval = 100  # save every 100 examples
 
